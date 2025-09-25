@@ -24,6 +24,8 @@ build-linux:
     - cd driver
     - python setup.py bdist_wheel
   extends: .artifacts_template
+  tags:
+    - cloud
   parallel:
     matrix:
       - PYIMAGE:
@@ -32,7 +34,7 @@ build-linux:
           - "python:3.11-slim-bullseye"
           - "python:3.12-slim-bullseye"
 
-.build-windows:
+build-windows:
   # It would be possible if we have windows
   stage: build
   image: $PYIMAGE
@@ -43,13 +45,16 @@ build-linux:
     - cd vcpkg
     - .\bootstrap-vcpkg.bat
     - .\vcpkg integrate install
-    - .\vcpkg install libusb
+    - .\vcpkg install libusb:x64-windows-static-md
     - rustup install nightly
-    - pip install -r driver/requirements.txt
-    - rustup override set nightly
+    - cd ..
     - cd driver
+    - pip install -r requirements.txt
+    - rustup override set nightly
     - python setup.py bdist_wheel
   extends: .artifacts_template
+  tags:
+    - Windows10
   parallel:
     matrix:
       - PYIMAGE:
@@ -64,6 +69,7 @@ package:
     - echo "Packaging wheel files"
   needs:
     - build-linux
+    - build-windows
   extends: .artifacts_template
   artifacts:
     expire_in: never
