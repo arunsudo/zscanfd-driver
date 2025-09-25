@@ -12,6 +12,37 @@ struct PyInterface {
     rx_send: Sender<Frame>,
 }
 
+/// Return the Length to DLC.
+fn raw_dlc_to_scaled_down_dlc(len : u8) -> u8 {
+    match len {
+        0..=8   => len,
+        9..=12  => 9,
+        13..=16 => 10,
+        17..=20 => 11,
+        21..=24 => 12,
+        25..=32 => 13,
+        33..=48 => 14,
+        49..=64 => 15,
+        65..=u8::MAX => 0,
+    }
+}
+
+/// Return the DLC to length.
+fn scaled_down_dlc_to_raw_dlc(dlc : u8) -> u8 {
+    match dlc {
+        0..=8 => dlc,
+        9  => 12,
+        10 => 16,
+        11 => 20,
+        12 => 24,
+        13 => 32,
+        14 => 48,
+        15 => 64,
+        16..=u8::MAX => 0,
+    }
+
+}
+
 impl IntoPy<PyObject> for Frame {
     fn into_py(self, py: Python) -> PyObject {
         let d = PyDict::new(py);
@@ -180,14 +211,21 @@ impl PyInterface {
         data: Vec<u8>,
     ) -> PyResult<()> {
         let mut data_array: Vec<u8> = vec![0; 64];
+
+        if raw_dlc_to_scaled_down_dlc(dlc) == 0 {
+           // Invalid Frame Size Send_fd stop here!
+            return Ok(());
+        }
+
         for i in 0..dlc as usize {
-            if i < dlc.into() {
+            if i < data.len() {
                 data_array[i] = data[i];
             }
         }
+
         self.i.send(Frame {
             can_id: id,
-            can_dlc: dlc,
+            can_dlc: raw_dlc_to_scaled_down_dlc(dlc),
             ext,
             rtr,
             data: data_array,
@@ -204,6 +242,11 @@ impl PyInterface {
 
     fn channel_count(&self) -> PyResult<usize> {
         Ok(self.i.channels())
+    }
+
+    fn set_fd(&mut self, channel: usize, enabled: bool) -> PyResult<()> {
+        self.i.set_fd(channel, enabled)?;
+        Ok(())
     }
 }
 
