@@ -9,7 +9,7 @@
 #![allow(clippy::missing_safety_doc)]
 
 use crate::{Frame, Interface};
-
+use std::ffi::{CStr, c_char};
 /// A CAN frame in a C representation
 #[repr(C)]
 pub struct CFrame {
@@ -91,8 +91,18 @@ pub unsafe extern "C" fn cantact_set_rx_callback(
 /// Open the device. This must be called before any interaction with the
 /// device (changing settings, starting communication).
 #[no_mangle]
-pub unsafe extern "C" fn cantact_open(ptr: *mut CInterface) -> i32 {
-    let i = match Interface::new() {
+pub unsafe extern "C" fn cantact_open(ptr: *mut CInterface, dev_serial_num: *const c_char) -> i32 {
+    // Manually check for NULL case
+    if dev_serial_num.is_null() {
+        return -1;
+    }
+
+    let s = match CStr::from_ptr(dev_serial_num).to_str() {
+        Ok(s) => s.to_string(),
+        Err(_) => return -1,
+    };
+
+    let i = match Interface::new(s) {
         Ok(i) => i,
         Err(_) => return -1,
     };

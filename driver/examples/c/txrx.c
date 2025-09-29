@@ -33,7 +33,8 @@ int main() {
     printf("Library initialized successfully.\n");
 
     // 2. Open the device connection
-    if (cantact_open(hnd) != 0) {
+    const u_char dev_serial_num[] = "1234"; // Replace with valid serial number
+    if (cantact_open(hnd, dev_serial_num) != 0) {
         printf("Error: Failed to open device.\n");
         cantact_deinit(hnd);
         return -6;

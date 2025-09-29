@@ -27,7 +27,7 @@ extern "C" {
 	__declspec(dllimport) cantacthnd cantact_init();
 	__declspec(dllimport) int32_t cantact_deinit(cantacthnd hnd);
 
-	__declspec(dllimport) int32_t cantact_open(cantacthnd hnd);
+	__declspec(dllimport) int32_t cantact_open(cantacthnd hnd, const char* dev_serial_num);
 	__declspec(dllimport) int32_t cantact_close(cantacthnd hnd);
 
 	__declspec(dllimport) int32_t cantact_set_rx_callback(cantacthnd hnd, CantactRxCallback callback);

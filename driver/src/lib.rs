@@ -253,8 +253,8 @@ impl fmt::Debug for Interface {
 impl Interface {
     /// Creates a new interface. This always selects the first device found by
     /// libusb. If no device is found, Error::DeviceNotFound is returned.
-    pub fn new() -> Result<Interface, Error> {
-        let mut dev = match Device::new(UsbContext::new()) {
+    pub fn new(dev_serial_num: String) -> Result<Interface, Error> {
+        let mut dev = match Device::new(UsbContext::new(), dev_serial_num) {
             Ok(d) => d,
             Err(_) => return Err(Error::DeviceNotFound),
         };

@@ -14,6 +14,9 @@ use std::thread;
 pub mod gsusb;
 pub(crate) use gsusb::*;
 
+pub mod libusb_helper;
+pub use libusb_helper::LibUsbHelperDevice;
+
 // CANtact USB VID / PID
 const USB_VID: u16 = 0x1d50;
 const USB_PID: u16 = 0x606f;
@@ -118,11 +121,13 @@ extern "system" fn bulk_in_cb(xfer: *mut libusb_transfer) {
 }
 
 impl Device {
-    pub(crate) fn new(ctx: UsbContext) -> Result<Device, Error> {
-        let hnd = unsafe { libusb_open_device_with_vid_pid(ctx.as_ptr(), USB_VID, USB_PID) };
-        if hnd.is_null() {
-            return Err(Error::DeviceNotFound);
-        }
+    pub(crate) fn new(ctx: UsbContext, dev_serial_num: String) -> Result<Device, Error> {
+        let mut lib_usb_help_dev = LibUsbHelperDevice::new(dev_serial_num, USB_VID, USB_PID, ctx.as_ptr());
+
+        let hnd = match lib_usb_help_dev.open_device_with_vid_pid_serial() {
+            Some(value) => value,
+            None => return Err(Error::DeviceNotFound),
+        };
 
         match unsafe { libusb_detach_kernel_driver(hnd, 0) } {
             LIBUSB_SUCCESS => {}
