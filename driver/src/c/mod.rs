@@ -91,18 +91,32 @@ pub unsafe extern "C" fn cantact_set_rx_callback(
 /// Open the device. This must be called before any interaction with the
 /// device (changing settings, starting communication).
 #[no_mangle]
-pub unsafe extern "C" fn cantact_open(ptr: *mut CInterface, dev_serial_num: *const c_char) -> i32 {
+pub unsafe extern "C" fn cantact_open(ptr: *mut CInterface) -> i32 {
+    let i = match Interface::new() {
+        Ok(i) => i,
+        Err(_) => return -1,
+    };
+    let ci = &mut *ptr;
+    ci.i = Some(i);
+    0
+}
+
+/// Open the device. This must be called before any
+/// interaction with the device by using the device
+/// serial number (changing settings, starting communication).
+#[no_mangle]
+pub unsafe extern "C" fn cantact_open_with_device_serial_number(ptr: *mut CInterface, dev_serial_num: *const c_char) -> i32 {
     // Manually check for NULL case
     if dev_serial_num.is_null() {
         return -1;
     }
 
-    let s = match CStr::from_ptr(dev_serial_num).to_str() {
+    let dev_serial_number = match CStr::from_ptr(dev_serial_num).to_str() {
         Ok(s) => s.to_string(),
         Err(_) => return -1,
     };
 
-    let i = match Interface::new(s) {
+    let i = match Interface::new_with_device_serial_number(dev_serial_number) {
         Ok(i) => i,
         Err(_) => return -1,
     };

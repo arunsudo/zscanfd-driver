@@ -253,8 +253,51 @@ impl fmt::Debug for Interface {
 impl Interface {
     /// Creates a new interface. This always selects the first device found by
     /// libusb. If no device is found, Error::DeviceNotFound is returned.
-    pub fn new(dev_serial_num: String) -> Result<Interface, Error> {
-        let mut dev = match Device::new(UsbContext::new(), dev_serial_num) {
+    pub fn new() -> Result<Interface, Error> {
+        let mut dev = match Device::new(UsbContext::new()) {
+            Ok(d) => d,
+            Err(_) => return Err(Error::DeviceNotFound),
+        };
+
+        let dev_config = dev.get_device_config()?;
+        let bt_consts = dev.get_bit_timing_consts()?;
+
+        let channel_count = dev_config.icount as usize;
+
+        let mut channels = Vec::new();
+        // note: channel_count is zero indexed
+        for _ in 0..(channel_count + 1) {
+            channels.push(Channel {
+                bitrate: 0,
+                enabled: true,
+                loopback: false,
+                monitor: false,
+                fd: false,
+                data_bitrate: 0,
+                started: false,
+            });
+        }
+
+        let i = Interface {
+            dev,
+            running: Arc::new(RwLock::from(false)),
+
+            channel_count,
+            can_clock: bt_consts.fclk_can,
+            sw_version: dev_config.sw_version,
+            hw_version: dev_config.hw_version,
+            features: bt_consts.feature,
+
+            channels,
+        };
+
+        Ok(i)
+    }
+
+    /// Creates a new interface. This always selects by device serial number
+    /// found by libusb. If no device is found, Error::DeviceNotFound is returned.
+    pub fn new_with_device_serial_number(dev_serial_num: String) -> Result<Interface, Error> {
+        let mut dev = match Device::new_with_device_serial_number(UsbContext::new(), dev_serial_num) {
             Ok(d) => d,
             Err(_) => return Err(Error::DeviceNotFound),
         };

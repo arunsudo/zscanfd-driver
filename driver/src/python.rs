@@ -73,7 +73,13 @@ impl std::convert::From<Error> for PyErr {
 impl PyInterface {
     #[new]
     fn new(dev_serial_num: String) -> PyResult<Self> {
-        let mut i = Interface::new(dev_serial_num)?;
+        let mut i: Interface;
+
+        if dev_serial_num.is_empty() {
+            i = Interface::new()?;
+        } else {
+            i = Interface::new_with_device_serial_number(dev_serial_num)?;
+        }
 
         // disable all channels by default
         for n in 0..i.channels.len() {
