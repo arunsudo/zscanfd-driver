@@ -122,12 +122,16 @@ extern "system" fn bulk_in_cb(xfer: *mut libusb_transfer) {
 
 impl Device {
     pub(crate) fn new(ctx: UsbContext, dev_serial_num: String) -> Result<Device, Error> {
-        let mut lib_usb_help_dev = LibUsbHelperDevice::new(dev_serial_num, USB_VID, USB_PID, ctx.as_ptr());
+        if (dev_serial_num == "") {
+            let hnd = libusb_open_device_with_vid_pid(ctx.as_ptr(), USB_VID, USB_PID);
+        } else {
+            let mut lib_usb_help_dev = LibUsbHelperDevice::new(dev_serial_num, USB_VID, USB_PID, ctx.as_ptr());
 
-        let hnd = match lib_usb_help_dev.open_device_with_vid_pid_serial() {
-            Some(value) => value,
-            None => return Err(Error::DeviceNotFound),
-        };
+            let hnd = match lib_usb_help_dev.open_device_with_vid_pid_serial() {
+                Some(value) => value,
+                None => return Err(Error::DeviceNotFound),
+            };
+        }
 
         match unsafe { libusb_detach_kernel_driver(hnd, 0) } {
             LIBUSB_SUCCESS => {}
