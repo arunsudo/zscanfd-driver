@@ -1,9 +1,8 @@
 use crate::Error;
 use crate::{Frame, Interface};
 use crossbeam_channel::{unbounded, Receiver, RecvTimeoutError, Sender};
-use pyo3::exceptions;
+use pyo3;
 use pyo3::prelude::*;
-use pyo3::types::PyDict;
 
 #[pyclass(name = Interface)]
 struct PyInterface {
@@ -28,6 +27,7 @@ fn raw_dlc_to_scaled_down_dlc(len : u8) -> u8 {
 }
 
 /// Return the DLC to length.
+#[allow(dead_code)]
 fn scaled_down_dlc_to_raw_dlc(dlc : u8) -> u8 {
     match dlc {
         0..=8 => dlc,
@@ -45,7 +45,7 @@ fn scaled_down_dlc_to_raw_dlc(dlc : u8) -> u8 {
 
 impl IntoPy<PyObject> for Frame {
     fn into_py(self, py: Python) -> PyObject {
-        let d = PyDict::new(py);
+        let d = pyo3::types::PyDict::new(py);
         d.set_item("id", self.can_id).unwrap();
         d.set_item("dlc", self.can_dlc).unwrap();
         d.set_item("data", self.data.to_vec()).unwrap();
@@ -65,21 +65,19 @@ impl IntoPy<PyObject> for Frame {
 
 impl std::convert::From<Error> for PyErr {
     fn from(err: Error) -> PyErr {
-        PyErr::new::<exceptions::SystemError, _>(format!("{:?}", err))
+        PyErr::new::<pyo3::exceptions::SystemError, _>(format!("{:?}", err))
     }
 }
 
 #[pymethods]
 impl PyInterface {
     #[new]
-    fn new(dev_serial_num: String) -> PyResult<Self> {
-        let mut i: Interface;
-
-        if dev_serial_num.is_empty() {
-            i = Interface::new()?;
-        } else {
-            i = Interface::new_with_device_serial_number(dev_serial_num)?;
-        }
+    #[args(optional_data = "None")]
+    fn new(dev_serial_num_opt: Option<String>) -> PyResult<Self> {
+        let mut i = match dev_serial_num_opt {
+            Some(dev_serial_num) => Interface::new_with_device_serial_number(dev_serial_num)?,
+            None => Interface::new()?,
+        };
 
         // disable all channels by default
         for n in 0..i.channels.len() {

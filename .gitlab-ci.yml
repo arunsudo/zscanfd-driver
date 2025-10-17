@@ -20,9 +20,10 @@ build-linux:
     - source "$HOME/.cargo/env"
     - rustup install nightly
     - pip install -r driver/requirements.txt
+    - pip install build
     - rustup override set nightly
     - cd driver
-    - python setup.py bdist_wheel
+    - python -m build --wheel --outdir dist
   extends: .artifacts_template
   tags:
     - cloud
@@ -35,10 +36,21 @@ build-linux:
           - "python:3.12-slim-bullseye"
 
 build-windows:
-  # It would be possible if we have windows
   stage: build
-  image: $PYIMAGE
+  image: "windows-base-image-with-python"
+  parallel:
+    matrix:
+       - PYTHON_VERSION:
+          - "3.9"
+          - "3.10"
+          - "3.11"
+          - "3.12"
   script:
+    - py -$PYTHON_VERSION -m venv venv
+    - . .\venv\Scripts\Activate.ps1
+    - python --version
+    - pip install -r driver/requirements.txt
+    - pip install build
     - curl https://static.rust-lang.org/rustup/dist/x86_64-pc-windows-msvc/rustup-init.exe -o rustup-init.exe
     - ./rustup-init.exe -y
     - git clone https://github.com/Microsoft/vcpkg.git
@@ -49,19 +61,11 @@ build-windows:
     - rustup install nightly
     - cd ..
     - cd driver
-    - pip install -r requirements.txt
     - rustup override set nightly
-    - python setup.py bdist_wheel
+    - python -m build --wheel --outdir dist
   extends: .artifacts_template
   tags:
-    - Windows10
-  parallel:
-    matrix:
-      - PYIMAGE:
-          - "python:3.9-windowsservercore-ltsc2022"
-          - "python:3.10-windowsservercore-ltsc2022"
-          - "python:3.11-windowsservercore-ltsc2022"
-          - "python:3.12-windowsservercore-ltsc2022"
+    - windows-shell
 
 package:
   stage: archive-package
