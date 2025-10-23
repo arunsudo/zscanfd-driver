@@ -46,8 +46,7 @@ build-windows:
           - "3.11"
           - "3.12"
   script:
-    - py -$PYTHON_VERSION -m venv venv
-    - . .\venv\Scripts\Activate.ps1
+    - pyenv global $PYTHON_VERSION
     - python --version
     - pip install -r driver/requirements.txt
     - pip install build
