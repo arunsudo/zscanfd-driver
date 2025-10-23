@@ -64,13 +64,11 @@ impl LibUsbHelperDevice {
          if available_devices_count < 0 {
             return ret_handle ;
          }
-
         // Convert the MaybeUninit to an libusb_device, assuming it's initialized
         let device_list = unsafe { listdev.assume_init() };
 
         // Raw pointer obtained through libusb (FFI) convert to &mut [T]
-        let devs = unsafe { slice::from_raw_parts(device_list, ret_handle as usize) };
-
+        let devs = unsafe { slice::from_raw_parts(device_list, available_devices_count as usize) };
         // Iterate each USB device from devs
         for dev in devs {
             let mut desc = mem::MaybeUninit::<libusb1_sys::libusb_device_descriptor>::uninit();
