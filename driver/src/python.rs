@@ -7,8 +7,8 @@ use pyo3::prelude::*;
 #[pyclass(name = Interface)]
 struct PyInterface {
     i: Interface,
-    rx_recv: Receiver<Frame>,
-    rx_send: Sender<Frame>,
+    rx_recvs: Vec<Receiver<Frame>>,
+    rx_sends: Vec<Sender<Frame>>,
 }
 
 /// Return the Length to DLC.
@@ -84,11 +84,20 @@ impl PyInterface {
             i.set_enabled(n, false)?;
         }
 
-        let (send, recv) = unbounded();
+        // Create a N channel of unbounded capacity
+        let mut rx_recvs: Vec<Receiver<Frame>> = Vec::new();
+        let mut rx_sends: Vec<Sender<Frame>> = Vec::new();
+
+        for _n in 0..i.channels.len() {
+            let (send, recv) = unbounded();
+            rx_sends.push(send);
+            rx_recvs.push(recv);
+        }
+
         Ok(PyInterface {
             i,
-            rx_recv: recv,
-            rx_send: send,
+            rx_recvs,
+            rx_sends,
         })
     }
 
@@ -140,10 +149,9 @@ impl PyInterface {
     }
 
     fn start(&mut self, channel: usize) -> PyResult<()> {
-        let rx = self.rx_send.clone();
-
+        let rxs = self.rx_sends.clone(); // Clone rx_sends Vector
         self.i.start(channel, move |f: Frame| {
-            match rx.send(f) {
+            match rxs[f.channel as usize].send(f) {  // Directly indexing Frame type can never have out of bound channel
                 Ok(_) => {}
                 Err(_) => {
                     panic!("error starting device")
@@ -159,15 +167,20 @@ impl PyInterface {
         Ok(())
     }
 
-    fn recv(&self, timeout_ms: u64) -> PyResult<Option<Frame>> {
+    fn recv(&mut self, timeout_ms: u64, channel: usize) -> PyResult<Option<Frame>> {
+        if channel > self.i.channels.len() {
+            panic!("InvalidChannel");
+        }
+
         let f = match self
-            .rx_recv
+            .rx_recvs[channel]
             .recv_timeout(std::time::Duration::from_millis(timeout_ms))
         {
             Ok(f) => f,
             Err(RecvTimeoutError::Timeout) => return Ok(None),
             Err(RecvTimeoutError::Disconnected) => panic!("device thread died"),
         };
+
         Ok(Some(f))
     }
 
