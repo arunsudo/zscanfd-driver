@@ -67,7 +67,10 @@ build-windows:
     - windows-shell
 
 package:
+  tags:
+    - cloud
   stage: archive-package
+  image: debian:bullseye-slim
   script:
     - echo "Packaging wheel files"
   needs:
