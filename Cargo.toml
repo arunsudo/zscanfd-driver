@@ -1,11 +1,11 @@
 [package]
 name = "zscanfd"
 version = "0.2.0"
-authors = ["Vijay Kumar <vijaykumar@zilogic.com>", "Navin Jared Czernev <navinkumar.j@zilogic.com>", "Godson Gnanaraj <godson@zilogic.com>", "Arunkumar <arunkumar.m@zilogic.com>"]
+authors = ["Eric Evenchick <eric@evenchick.com>", "Vijay Kumar <vijaykumar@zilogic.com>", "Navin Jared Czernev <navinkumar.j@zilogic.com>", "Godson Gnanaraj <godson@zilogic.com>", "Arunkumar <arunkumar.m@zilogic.com>"]
 license = "MIT"
 keywords = ["can", "usb"]
 categories = ["command-line-utilities", "hardware-support"]
-repository = "ToDo:Add zscanfd repository"
+repository = "https://github.com/zilogic-systems/zscanfd-driver"
 homepage = "ToDo:Add http://zscanfd.io/"
 readme = "README.md"
 description = "CLI for zscanfd Controller Area Network tools."

@@ -24,8 +24,8 @@ with open("README.md", "r") as fh:
 setup(
     name="zscanfd",
     version="0.2.0",
-    author="Vijay Kumar",
-    author_email="vijaykumar@zilogic.com",
+    author="Zilogic Systems",
+    author_email="code@zilogic.com",
     description="Support for the zs-canfd Controller Area Network Devices",
     long_description=long_description,
     long_description_content_type="text/markdown",
