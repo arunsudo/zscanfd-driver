@@ -17,7 +17,7 @@ pub(crate) use gsusb::*;
 pub mod libusb_helper;
 pub use libusb_helper::LibUsbHelperDevice;
 
-// CANtact USB VID / PID
+// zscanfd USB VID / PID
 const USB_VID: u16 = 0x1d50;
 const USB_PID: u16 = 0x606f;
 

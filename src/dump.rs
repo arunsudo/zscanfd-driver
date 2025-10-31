@@ -1,5 +1,5 @@
 use crate::Error;
-use cantact::{Frame, Interface};
+use zscanfd::{Frame, Interface};
 use clap::ArgMatches;
 use log::info;
 

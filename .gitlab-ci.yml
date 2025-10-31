@@ -6,7 +6,7 @@ stages:
   artifacts:
     name: wheels
     paths:
-      - driver/dist/cantact-*.whl
+      - driver/dist/zscanfd-*.whl
     expire_in: 15 minutes
 
 build-linux:

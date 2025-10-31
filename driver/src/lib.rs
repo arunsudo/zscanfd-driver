@@ -1,8 +1,8 @@
-//! This crate provides a userspace driver for the CANtact family of
+//! This crate provides a userspace driver for the zscanfd family of
 //! Controller Area Network (CAN) devices.
 //!
 //! The rust library provided by this crate can be used directly to build
-//! applications for CANtact. The crate also provides bindings for other
+//! applications for zscanfd. The crate also provides bindings for other
 //! langauges.
 
 #![warn(missing_docs)]
@@ -222,7 +222,7 @@ pub struct Channel {
 
 }
 
-/// Interface for interacting with CANtact devices
+/// Interface for interacting with zscanfd devices
 pub struct Interface {
     dev: Device,
     running: Arc<RwLock<bool>>,

@@ -55,23 +55,23 @@ pub struct CInterface {
     c_rx_cb: Option<extern "C" fn(*const CFrame)>,
 }
 
-/// Create a new CANtact interface, returning a pointer to the interface.
+/// Create a new zs_canfd interface, returning a pointer to the interface.
 /// This pointer must be provided as the first argument to all other calls in
 /// this library.
 ///
 /// If this function fails, it returns a null pointer (0).
 #[no_mangle]
-pub extern "C" fn cantact_init() -> *mut CInterface {
+pub extern "C" fn zs_canfd_init() -> *mut CInterface {
     Box::into_raw(Box::new(CInterface {
         i: None,
         c_rx_cb: None,
     }))
 }
 
-/// Clean up a CANtact interface.
+/// Clean up a zs_canfd interface.
 /// After calling, the pointer is no longer valid.
 #[no_mangle]
-pub unsafe extern "C" fn cantact_deinit(ptr: *mut CInterface) -> i32 {
+pub unsafe extern "C" fn zs_canfd_deinit(ptr: *mut CInterface) -> i32 {
     let _ = Box::from_raw(ptr);
     0
 }
@@ -79,7 +79,7 @@ pub unsafe extern "C" fn cantact_deinit(ptr: *mut CInterface) -> i32 {
 /// Set the receive callback function. This function will be called when a
 /// frame is received.
 #[no_mangle]
-pub unsafe extern "C" fn cantact_set_rx_callback(
+pub unsafe extern "C" fn zs_canfd_set_rx_callback(
     ptr: *mut CInterface,
     cb: Option<extern "C" fn(*const CFrame)>,
 ) -> i32 {
@@ -91,7 +91,7 @@ pub unsafe extern "C" fn cantact_set_rx_callback(
 /// Open the device. This must be called before any interaction with the
 /// device (changing settings, starting communication).
 #[no_mangle]
-pub unsafe extern "C" fn cantact_open(ptr: *mut CInterface) -> i32 {
+pub unsafe extern "C" fn zs_canfd_open(ptr: *mut CInterface) -> i32 {
     let i = match Interface::new() {
         Ok(i) => i,
         Err(_) => return -1,
@@ -105,7 +105,7 @@ pub unsafe extern "C" fn cantact_open(ptr: *mut CInterface) -> i32 {
 /// interaction with the device by using the device
 /// serial number (changing settings, starting communication).
 #[no_mangle]
-pub unsafe extern "C" fn cantact_open_with_device_serial_number(ptr: *mut CInterface, dev_serial_num: *const c_char) -> i32 {
+pub unsafe extern "C" fn zs_canfd_open_with_device_serial_number(ptr: *mut CInterface, dev_serial_num: *const c_char) -> i32 {
     // Manually check for NULL case
     if dev_serial_num.is_null() {
         return -1;
@@ -128,7 +128,7 @@ pub unsafe extern "C" fn cantact_open_with_device_serial_number(ptr: *mut CInter
 /// Close the device. After closing, no interaction with the device
 /// can be performed.
 #[no_mangle]
-pub unsafe extern "C" fn cantact_close(ptr: *mut CInterface) -> i32 {
+pub unsafe extern "C" fn zs_canfd_close(ptr: *mut CInterface) -> i32 {
     let ci = &mut *ptr;
     ci.i = None;
     0
@@ -139,7 +139,7 @@ pub unsafe extern "C" fn cantact_close(ptr: *mut CInterface) -> i32 {
 /// This function starts a thread which will call the registered callback
 /// when a frame is received.
 #[no_mangle]
-pub unsafe extern "C" fn cantact_start(
+pub unsafe extern "C" fn zs_canfd_start(
     ptr: *mut CInterface,
     channel: u8,
 ) -> i32 {
@@ -164,7 +164,7 @@ pub unsafe extern "C" fn cantact_start(
 
 /// Stop CAN communication. This will stop all configured CAN channels.
 #[no_mangle]
-pub unsafe extern "C" fn cantact_stop(
+pub unsafe extern "C" fn zs_canfd_stop(
     ptr: *mut CInterface,
     channel: u8,
 ) -> i32 {
@@ -178,7 +178,7 @@ pub unsafe extern "C" fn cantact_stop(
 
 /// Transmit a frame. Can only be called if the device is running.
 #[no_mangle]
-pub unsafe extern "C" fn cantact_transmit(ptr: *mut CInterface, cf: CFrame) -> i32 {
+pub unsafe extern "C" fn zs_canfd_transmit(ptr: *mut CInterface, cf: CFrame) -> i32 {
     let ci = &mut *ptr;
     let f = Frame {
         channel: cf.channel, //cf.channel,
@@ -203,7 +203,7 @@ pub unsafe extern "C" fn cantact_transmit(ptr: *mut CInterface, cf: CFrame) -> i
 
 /// Sets the bitrate for a channel to the given value in bits per second.
 #[no_mangle]
-pub unsafe extern "C" fn cantact_set_bitrate(
+pub unsafe extern "C" fn zs_canfd_set_bitrate(
     ptr: *mut CInterface,
     channel: u8,
     bitrate: u32,
@@ -220,7 +220,7 @@ pub unsafe extern "C" fn cantact_set_bitrate(
 
 /// Sets the data bitrate for a channel to the given value in bits per second.
 #[no_mangle]
-pub unsafe extern "C" fn cantact_set_data_bitrate(
+pub unsafe extern "C" fn zs_canfd_set_data_bitrate(
     ptr: *mut CInterface,
     channel: u8,
     bitrate: u32,
@@ -237,7 +237,7 @@ pub unsafe extern "C" fn cantact_set_data_bitrate(
 
 /// Enable or disable a channel.
 #[no_mangle]
-pub unsafe extern "C" fn cantact_set_enabled(
+pub unsafe extern "C" fn zs_canfd_set_enabled(
     ptr: *mut CInterface,
     channel: u8,
     enabled: u8,
@@ -255,7 +255,7 @@ pub unsafe extern "C" fn cantact_set_enabled(
 /// Enable or disable bus monitoring mode for a channel. When enabled, channel
 /// will not transmit frames or acknoweldgements.
 #[no_mangle]
-pub unsafe extern "C" fn cantact_set_monitor(
+pub unsafe extern "C" fn zs_canfd_set_monitor(
     ptr: *mut CInterface,
     channel: u8,
     enabled: u8,
@@ -273,7 +273,7 @@ pub unsafe extern "C" fn cantact_set_monitor(
 /// Enable or disable hardware loopback for a channel. This will cause sent
 /// frames to be received. This mode is mostly intended for device testing.
 #[no_mangle]
-pub unsafe extern "C" fn cantact_set_hw_loopback(
+pub unsafe extern "C" fn zs_canfd_set_hw_loopback(
     ptr: *mut CInterface,
     channel: u8,
     enabled: u8,
@@ -292,7 +292,7 @@ pub unsafe extern "C" fn cantact_set_hw_loopback(
 ///
 /// Returns the number of channels or a negative error code on failure.
 #[no_mangle]
-pub unsafe extern "C" fn cantact_get_channel_count(ptr: *mut CInterface) -> i32 {
+pub unsafe extern "C" fn zs_canfd_get_channel_count(ptr: *mut CInterface) -> i32 {
     let ci = &mut *ptr;
     match &mut ci.i {
         Some(i) => i.channels() as i32,
@@ -302,7 +302,7 @@ pub unsafe extern "C" fn cantact_get_channel_count(ptr: *mut CInterface) -> i32 
 
 /// Enable or disable FD mode for a channel.
 #[no_mangle]
-pub unsafe extern "C" fn cantact_set_fd(
+pub unsafe extern "C" fn zs_canfd_set_fd(
     ptr: *mut CInterface,
     channel: u8,
     enabled: u8,

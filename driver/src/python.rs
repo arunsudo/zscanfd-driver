@@ -268,7 +268,7 @@ impl PyInterface {
 }
 
 #[pymodule]
-fn cantact(_py: Python, m: &PyModule) -> PyResult<()> {
+fn zscanfd(_py: Python, m: &PyModule) -> PyResult<()> {
     m.add_class::<PyInterface>()?;
     Ok(())
 }
