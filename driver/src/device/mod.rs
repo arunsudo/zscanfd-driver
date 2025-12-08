@@ -26,7 +26,7 @@ const CTRL_BUF_SIZE: usize = 64;
 // number of bulk in transfers
 const BULK_IN_TRANSFER_COUNT: usize = 32;
 // buffer size for bulk in transfer
-const BULK_IN_BUF_SIZE: usize = 76;
+const BULK_IN_BUF_SIZE: usize = 80;
 // timeout for bulk in transfers
 const BULK_IN_TIMEOUT_MS: u32 = 5000;
 

@@ -36,7 +36,7 @@ extern "C" {
 	__declspec(dllimport) int32_t zs_canfd_start(zs_canfdhnd hnd, uint8_t channel);
 	__declspec(dllimport) int32_t zs_canfd_stop(zs_canfdhnd hnd, uint8_t channel);
 
-	__declspec(dllimport) int32_t zs_canfd_transmit(zs_canfdhnd hnd, const struct zs_canfdFrame f);
+	__declspec(dllimport) int32_t zs_canfd_transmit(zs_canfdhnd hnd, const struct CanFrame f);
 
 	__declspec(dllimport) int32_t zs_canfd_set_bitrate(zs_canfdhnd hnd, uint8_t channel, uint32_t bitrate);
 	__declspec(dllimport) int32_t zs_canfd_set_data_bitrate(zs_canfdhnd hnd, uint8_t channel, uint32_t bitrate);

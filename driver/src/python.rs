@@ -53,11 +53,12 @@ impl IntoPy<PyObject> for Frame {
         d.set_item("rtr", self.rtr).unwrap();
         d.set_item("channel", self.channel).unwrap();
         d.set_item("loopback", self.loopback).unwrap();
-        match self.timestamp {
+        d.set_item("hw_timestamp", self.hw_timestamp).unwrap();
+        match self.sw_timestamp {
             Some(t) => d
-                .set_item("timestamp", t.as_micros() as f32 / 1000000.0)
+                .set_item("sw_timestamp", t.as_micros() as f32 / 1000000.0)
                 .unwrap(),
-            None => d.set_item("timestamp", 0).unwrap(),
+            None => d.set_item("sw_timestamp", 0).unwrap(),
         };
         d.to_object(py)
     }
@@ -211,7 +212,8 @@ impl PyInterface {
             brs: false,
             err: false,
             esi: false,
-            timestamp: None,
+            sw_timestamp: None,
+            hw_timestamp: 0,
         })?;
         Ok(())
     }
@@ -252,7 +254,8 @@ impl PyInterface {
             brs,
             err: false,
             esi: false,
-            timestamp: None,
+            sw_timestamp: None,
+            hw_timestamp: 0,
         })?;
         Ok(())
     }

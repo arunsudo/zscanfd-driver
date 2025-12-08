@@ -92,8 +92,11 @@ pub struct Frame {
     /// Remote Transmission Request (RTR) flag.
     pub rtr: bool,
 
-    /// Timestamp when frame was received
-    pub timestamp: Option<time::Duration>,
+    /// Timestamp when frame was received updated by internal std::time
+    pub sw_timestamp: Option<time::Duration>,
+
+    /// Timestamp when frame was received updated by gs_host frame
+    pub hw_timestamp: u32,
 }
 
 impl default::Default for Frame {
@@ -111,7 +114,8 @@ impl default::Default for Frame {
             brs: false,
             esi: false,
             err: false,
-            timestamp: None,
+            sw_timestamp: None,
+            hw_timestamp: 0,
         }
     }
 }
@@ -151,6 +155,7 @@ impl Frame {
             can_dlc: self.can_dlc,
             channel: self.channel,
             data: self.data_as_array(),
+            timestamp_us: self.hw_timestamp,
         }
     }
 
@@ -182,7 +187,8 @@ impl Frame {
             brs,
             esi,
             err,
-            timestamp: None,
+            sw_timestamp: None,
+            hw_timestamp: hf.timestamp_us,
         }
     }
 
@@ -398,7 +404,7 @@ impl Interface {
                     match can_rx.recv() {
                         Ok(hf) => {
                             let mut f = Frame::from_host_frame(hf);
-                            f.timestamp = Some(time::Instant::now().duration_since(start_time));
+                            f.sw_timestamp = Some(time::Instant::now().duration_since(start_time));
                             rx_callback(f)
                         }
                         Err(RecvError) => {

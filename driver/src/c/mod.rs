@@ -192,7 +192,8 @@ pub unsafe extern "C" fn zs_canfd_transmit(ptr: *mut CInterface, cf: CFrame) -> 
         loopback: false,
         rtr: cf.rtr > 0,
         err: cf.err > 0,
-        timestamp: None,
+        sw_timestamp: None,
+        hw_timestamp: 0,
     };
     match &mut ci.i {
         Some(i) => i.send(f).expect("failed to transmit frame"),
