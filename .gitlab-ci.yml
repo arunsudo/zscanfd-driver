@@ -1,16 +1,64 @@
 stages:
-  - build
-  - archive-package
+  - build-dumptool-windows
+  - archive-dumptool-windows
+  - build-python-libs
+  - archive-python-libs
 
-.artifacts_template:
+.artifacts_template_for_python:
   artifacts:
     name: wheels
     paths:
       - driver/dist/zscanfd-*.whl
     expire_in: 15 minutes
 
-build-linux:
-  stage: build
+.artifacts_template_dumptool_windows:
+  artifacts:
+    name: executable
+    paths:
+      - target/release/can.exe
+    expire_in: 15 minutes
+
+build-windows-dumptool:
+  stage: build-dumptool-windows
+  tags:
+    - windows-shell
+  script:
+    - curl https://static.rust-lang.org/rustup/dist/x86_64-pc-windows-msvc/rustup-init.exe -o rustup-init.exe
+    - ./rustup-init.exe -y
+    - git clone https://github.com/Microsoft/vcpkg.git
+    - cd vcpkg
+    - .\bootstrap-vcpkg.bat
+    - .\vcpkg integrate install
+    - .\vcpkg install libusb:x64-windows-static-md
+    - cargo build --release
+  extends:
+    - .artifacts_template_dumptool_windows
+
+package-dumptool-windows:
+  tags:
+    - cloud
+  stage: archive-dumptool-windows
+  image: debian:bullseye-slim
+  script:
+    - echo "Packaging wheel files"
+  needs:
+    - build-windows-dumptool
+  extends:
+    - .artifacts_template_dumptool_windows
+  artifacts:
+    expire_in: never
+
+build-python-libs-linux:
+  stage: build-python-libs
+  tags:
+    - cloud
+  parallel:
+    matrix:
+      - PYIMAGE:
+        - "python:3.9-slim-bullseye"
+        - "python:3.10-slim-bullseye"
+        - "python:3.11-slim-bullseye"
+        - "python:3.12-slim-bullseye"
   image: $PYIMAGE
   script:
     - apt update
@@ -24,32 +72,21 @@ build-linux:
     - rustup override set nightly
     - cd driver
     - python -m build --wheel --outdir dist
-  extends: .artifacts_template
-  tags:
-    - cloud
-  parallel:
-    matrix:
-      - PYIMAGE:
-          - "python:3.9-slim-bullseye"
-          - "python:3.10-slim-bullseye"
-          - "python:3.11-slim-bullseye"
-          - "python:3.12-slim-bullseye"
+  extends:
+    - .artifacts_template_for_python
 
-build-windows:
-  stage: build
-  image: "windows-base-image-with-python"
+build-python-libs-windows:
+  stage: build-python-libs
+  tags:
+    - windows-shell
   parallel:
     matrix:
-       - PYTHON_VERSION:
-          - "3.9"
-          - "3.10"
-          - "3.11"
-          - "3.12"
+      - PYTHON_VERSION:
+        - "3.9"
+        - "3.10"
+        - "3.11"
+        - "3.12"
   script:
-    - pyenv global $PYTHON_VERSION
-    - python --version
-    - pip install -r driver/requirements.txt
-    - pip install build
     - curl https://static.rust-lang.org/rustup/dist/x86_64-pc-windows-msvc/rustup-init.exe -o rustup-init.exe
     - ./rustup-init.exe -y
     - git clone https://github.com/Microsoft/vcpkg.git
@@ -58,24 +95,28 @@ build-windows:
     - .\vcpkg integrate install
     - .\vcpkg install libusb:x64-windows-static-md
     - rustup install nightly
+    - pyenv global $PYTHON_VERSION
+    - python --version
+    - pip install -r driver/requirements.txt
+    - pip install build
     - cd ..
     - cd driver
     - rustup override set nightly
     - python -m build --wheel --outdir dist
-  extends: .artifacts_template
-  tags:
-    - windows-shell
+  extends:
+    - .artifacts_template_for_python
 
-package:
+package-python:
   tags:
     - cloud
-  stage: archive-package
+  stage: archive-python-libs
   image: debian:bullseye-slim
   script:
     - echo "Packaging wheel files"
   needs:
-    - build-linux
-    - build-windows
-  extends: .artifacts_template
+    - build-python-libs-linux
+    - build-python-libs-windows
+  extends:
+    - .artifacts_template_for_python
   artifacts:
     expire_in: never
