@@ -35,7 +35,7 @@ pub fn cmd(matches: &ArgMatches) -> Result<(), Error> {
     info!("starting dump");
     i.start(ch.unwrap(), move |_: Frame| {}).expect("failed to start device");
 
-    let mut count: i32 = 0;
+    let mut count = 0;
     let mut f = zscanfd::Frame { can_dlc: 8, ..Default::default() };
     loop {
         f.can_id = count % 0x800;

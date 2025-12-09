@@ -7,7 +7,7 @@ use crate::config::Config;
 use crate::helpers;
 
 fn print_frame(f: Frame) {
-    let ts = match f.timestamp {
+    let ts = match f.sw_timestamp {
         Some(t) => format!("{:.6}\t", t.as_secs_f32()),
         None => String::new(),
     };
