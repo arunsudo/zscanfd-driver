@@ -124,15 +124,12 @@ package-libs:
 build-windows-dumptool:
   stage: build-dumptool-windows
   tags:
-    - windows-shell
+    - Windows10-docker
+  image: navinkumarj/python3-13-wsc-ltsc25-msvc-rust-1-91:v1.3.0
   script:
-    - curl https://static.rust-lang.org/rustup/dist/x86_64-pc-windows-msvc/rustup-init.exe -o rustup-init.exe
-    - ./rustup-init.exe -y
-    - git clone https://github.com/Microsoft/vcpkg.git
-    - cd vcpkg
-    - .\bootstrap-vcpkg.bat
-    - .\vcpkg integrate install
-    - .\vcpkg install libusb:x64-windows-static-md
+    - $env:PATH="$env:PATH;$env:VCPKG_ROOT"
+    - netsh winhttp reset proxy
+    - vcpkg install libusb:x64-windows-static-md
     - cargo build --release
   extends:
     - .artifacts_template_dumptool_windows
@@ -178,7 +175,7 @@ build-python-libs-linux:
 build-python-libs-windows:
   stage: build-python-libs
   tags:
-    - windows-shell
+    - Windows10-docker
   parallel:
     matrix:
       - PYTHON_VERSION:
@@ -186,6 +183,7 @@ build-python-libs-windows:
         - "3.10"
         - "3.11"
         - "3.12"
+  image: navinkumarj/python3-13-wsc-ltsc25-msvc-rust-1-91:v1.3.0
   script:
     - curl https://static.rust-lang.org/rustup/dist/x86_64-pc-windows-msvc/rustup-init.exe -o rustup-init.exe
     - ./rustup-init.exe -y
