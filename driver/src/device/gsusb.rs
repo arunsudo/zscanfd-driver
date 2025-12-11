@@ -203,7 +203,7 @@ impl HostFrame {
             flags: bs[10],
             reserved: bs[11],
             data,
-            timestamp_us: timestamp_us,
+            timestamp_us,
         }
     }
     pub(crate) fn to_le_bytes(&self) -> Vec<u8> {

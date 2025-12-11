@@ -12,10 +12,9 @@ RUN apt update \
         wget \
         curl \
         ca-certificates \
+        debian-archive-keyring \
         build-essential \
         git \
-        libusb-1.0-0-dev \
-        pkg-config build-essential \
         zlib1g-dev \
         libssl-dev \
         libbz2-dev \

@@ -14,10 +14,10 @@ pub struct LibUsbHelperDevice {
 impl LibUsbHelperDevice {
     pub fn new(ctx: *mut libusb1_sys::libusb_context, vendor_id: u16, product_id: u16, serial_num: String) -> LibUsbHelperDevice {
         LibUsbHelperDevice {
-            serial_number: String::from(serial_num),
-            vendor_id: vendor_id,
-            product_id: product_id,
-            ctx: ctx,
+            serial_number: serial_num,
+            vendor_id,
+            product_id,
+            ctx,
         }
     }
 
@@ -28,7 +28,7 @@ impl LibUsbHelperDevice {
         }
 
         let mut vec = Vec::<u8>::with_capacity(256);
-        let ptr = (&mut vec[..]).as_mut_ptr();
+        let ptr = vec.as_mut_ptr();
 
         let len = unsafe {
             libusb1_sys::libusb_get_string_descriptor_ascii(
@@ -41,11 +41,7 @@ impl LibUsbHelperDevice {
 
         if len > 0 {
             unsafe { vec.set_len(len as usize) };
-
-            match String::from_utf8(vec) {
-                Ok(s) => Some(s),
-                Err(_) => None,
-            }
+            String::from_utf8(vec).ok()
         } else {
             None
         }
@@ -96,11 +92,8 @@ impl LibUsbHelperDevice {
                         let mut dev_serial =  String::new();
                         if descriptor.iSerialNumber > 0 {
                             // Get the USB serial number
-                            match self.get_usb_string_descriptor(handle, descriptor.iSerialNumber) {
-                                Some(serial) => {
-                                    dev_serial = serial;
-                                },
-                                None => (),
+                            if let Some(serial) = self.get_usb_string_descriptor(handle, descriptor.iSerialNumber) {
+                                dev_serial = serial;
                             }
                         }
                         // Compare serial number
@@ -112,13 +105,13 @@ impl LibUsbHelperDevice {
                         } else {
                             // When match failed close the object
                             if !handle.is_null() {
-                                { libusb1_sys::libusb_close(handle) };
+                                libusb1_sys::libusb_close(handle);
                             }
                         }
                     }
                 }
             }
         }
-        return ret_handle;
+        ret_handle
     }
 }

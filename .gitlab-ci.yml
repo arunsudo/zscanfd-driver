@@ -1,4 +1,5 @@
 stages:
+  - clippy-check
   - build-dumptool-windows
   - archive-dumptool-windows
   - build-python-libs
@@ -17,6 +18,16 @@ stages:
     paths:
       - target/release/can.exe
     expire_in: 15 minutes
+
+clippy:
+  stage: clippy-check
+  tags:
+    - cloud
+  image: rust:slim-bullseye
+  script:
+    - apt update && apt install -y libusb-1.0-0-dev pkg-config
+    - rustup component add clippy
+    - cargo clippy --all-targets --all-features -- -D warnings
 
 build-windows-dumptool:
   stage: build-dumptool-windows
@@ -59,8 +70,9 @@ build-python-libs-linux:
         - "3.10"
         - "3.11"
         - "3.12"
-  image: navinkumarj/rust-deb-bullseye-slim-pyenv:v1.1.0
+  image: navinkumarj/pyenv-py3-9-to-py3-13:rust_slim-bullseye
   script:
+    - apt update && apt install -y libusb-1.0-0-dev pkg-config
     - rustup install nightly
     - pyenv global $PYTHON_VERSION
     - python --version
@@ -86,17 +98,17 @@ build-python-libs-windows:
   script:
     - curl https://static.rust-lang.org/rustup/dist/x86_64-pc-windows-msvc/rustup-init.exe -o rustup-init.exe
     - ./rustup-init.exe -y
+    - rustup install nightly
     - git clone https://github.com/Microsoft/vcpkg.git
     - cd vcpkg
     - .\bootstrap-vcpkg.bat
     - .\vcpkg integrate install
     - .\vcpkg install libusb:x64-windows-static-md
-    - rustup install nightly
+    - cd ..
     - pyenv global $PYTHON_VERSION
     - python --version
     - pip install -r driver/requirements.txt
     - pip install build
-    - cd ..
     - cd driver
     - rustup override set nightly
     - python -m build --wheel --outdir dist
