@@ -6,6 +6,9 @@ stages:
   - archive-dumptool-windows
   - build-python-libs
   - archive-python-libs
+  - archive-package
+  - publish
+  - release
 
 .artifacts_template_debug_libs_windows:
   artifacts:
@@ -16,7 +19,6 @@ stages:
       - target/debug/zscanfd.dll.lib
       - target/debug/zscanfd.dll.exp
       - target/debug/zscanfd.pdb
-      - target/debug/libzscanfd.rlib
     expire_in: 15 minutes
 
 .artifacts_template_release_libs_windows:
@@ -26,7 +28,21 @@ stages:
       - driver/src/c/zs_canfd.h
       - target/release/zscanfd.dll
       - target/release/zscanfd.dll.lib
-      - target/release/libzscanfd.rlib
+    expire_in: 15 minutes
+
+.artifacts_template_debug_and_release_libs_windows:
+  artifacts:
+    name: debug_and_release_libs
+    paths:
+      - driver/src/c/zs_canfd.h
+      # Debug artifacts
+      - target/debug/zscanfd.dll
+      - target/debug/zscanfd.dll.lib
+      - target/debug/zscanfd.dll.exp
+      - target/debug/zscanfd.pdb
+      # Release artifacts
+      - target/release/zscanfd.dll
+      - target/release/zscanfd.dll.lib
     expire_in: 15 minutes
 
 .artifacts_template_for_python:
@@ -34,7 +50,7 @@ stages:
     name: wheels
     paths:
       - driver/dist/zscanfd-*.whl
-    expire_in: 15 minutes
+    expire_in: 1 hour
 
 .artifacts_template_dumptool_windows:
   artifacts:
@@ -99,10 +115,9 @@ package-libs:
   stage: archive-libs-package
   image: debian:bullseye-slim
   script:
-    - echo "Packaging lib files (*.dll, *.dll.lib, *.rlib, etc...)"
+    - echo "Packaging lib files (*.dll, *.dll.lib, etc...)"
   extends:
-    - .artifacts_template_debug_libs_windows
-    - .artifacts_template_release_libs_windows
+    - .artifacts_template_debug_and_release_libs_windows
   artifacts:
     expire_in: never
 
@@ -181,7 +196,6 @@ build-python-libs-windows:
     - .\vcpkg integrate install
     - .\vcpkg install libusb:x64-windows-static-md
     - cd ..
-    - pyenv install $PYTHON_VERSION
     - pyenv global $PYTHON_VERSION
     - python --version
     - pip install -r driver/requirements.txt
@@ -206,3 +220,72 @@ package-python:
     - .artifacts_template_for_python
   artifacts:
     expire_in: never
+
+
+archive-all-artifacts:
+  tags:
+    - cloud
+  stage: archive-package
+  image: debian:bullseye-slim
+  script:
+    - apt-get update
+    - apt-get install -y zip
+    - echo "Packaging artifacts"
+    - mkdir zscanfd-package
+    - cd zscanfd-package
+    - mkdir wheels debug release src
+    - cp ../driver/dist/zscanfd-*.whl wheels/
+    - cp ../driver/src/c/zs_canfd.h src/
+    - cp ../target/debug/* debug/
+    - cp ../target/release/* release/
+    - cd ..
+    - zip -r zscanfd-package.zip zscanfd-package
+  needs:
+    - package-libs
+    - package-python
+  artifacts:
+    name: zscanfd-package
+    paths:
+      - zscanfd-package.zip
+    expire_in: never
+
+publish_package:
+  stage: publish
+  image: debian:bullseye-slim
+  rules:
+    - if: '$CI_COMMIT_TAG'
+  needs:
+    - job: archive-all-artifacts
+      artifacts: true
+  script:
+    - VERSION="$CI_COMMIT_TAG"
+    - PACKAGE_REGISTRY_UPLOAD_PATH="$CI_API_V4_URL/projects/$CI_PROJECT_ID/packages/generic/zs-can-fd/driver/$VERSION/zscanfd-package.zip"
+    - apt-get update
+    - apt-get install -y python3-pip
+    - pip3 install zdeb-utils
+    - zdeb-utils -a download -k "$ENGG_PKG_REGISTRY_KEY" -r engg/packages -p workdrive-sync -v __latest__ -f workdrive-sync.deb
+    - apt-get install ./workdrive-sync.deb -y
+    # Upload to Zoho Workdrive
+    # TODO: Change the folder name 'zs-cantact-pro' to 'zs-can-fd'
+    - workdrive-sync -t world -r engg/zs/zs-cantact-pro/driver/current/zscanfd-package.zip
+    - workdrive-sync -t world -r engg/zs/zs-cantact-pro/driver/$VERSION/zscanfd-package.zip
+
+    # Upload to GitLab Package Registry
+    - curl --header "JOB-TOKEN:$CI_JOB_TOKEN" --upload-file zscanfd-package.zip "$PACKAGE_REGISTRY_UPLOAD_PATH"
+
+create_release:
+  stage: release
+  image: debian:bullseye-slim
+  rules:
+    - if: '$CI_COMMIT_TAG'
+  needs:
+    - publish_package
+  script:
+    - VERSION="$CI_COMMIT_TAG"
+    - RELEASE_PATH="$CI_API_V4_URL/projects/$CI_PROJECT_ID/releases/$VERSION"
+
+    # URL for the file inside GitLab's Package Registry
+    - PACKAGE_URL="$CI_PROJECT_URL/-/packages/generic/zs-can-fd/driver/$VERSION/zscanfd-package.zip"
+
+    # Create release and add the package as an asset to the release
+    - curl --request POST --header "JOB-TOKEN:$CI_JOB_TOKEN" --data "name=zscanfd-package.zip" --data "url=$PACKAGE_URL" "$RELEASE_PATH"
