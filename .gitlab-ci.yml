@@ -125,7 +125,7 @@ build-windows-dumptool:
   stage: build-dumptool-windows
   tags:
     - Windows10-docker
-  image: navinkumarj/python3-13-wsc-ltsc25-msvc-rust-1-91:v1.3.0
+  image: navinkumarj/rust-msvc-wsc-25:git_vcpkg
   script:
     - $env:PATH="$env:PATH;$env:VCPKG_ROOT"
     - netsh winhttp reset proxy
@@ -183,17 +183,14 @@ build-python-libs-windows:
         - "3.10"
         - "3.11"
         - "3.12"
-  image: navinkumarj/python3-13-wsc-ltsc25-msvc-rust-1-91:v1.3.0
+  image: navinkumarj/pyenv-py3-9-to-py3-13:wsc-25_msvc_rust-git_vcpkg
   script:
-    - curl https://static.rust-lang.org/rustup/dist/x86_64-pc-windows-msvc/rustup-init.exe -o rustup-init.exe
-    - ./rustup-init.exe -y
+    - netsh winhttp reset proxy
     - rustup install nightly
-    - git clone https://github.com/Microsoft/vcpkg.git
-    - cd vcpkg
-    - .\bootstrap-vcpkg.bat
-    - .\vcpkg integrate install
-    - .\vcpkg install libusb:x64-windows-static-md
-    - cd ..
+    - $env:PATH=('{0};{1}' -f $env:PATH, $env:VCPKG_ROOT)
+    - vcpkg install libusb:x64-windows-static-md
+    - $env:PATH=('{0};{1}' -f $env:PATH, $env:GIT_HOME)
+    - $env:PATH=('{0};{1}' -f $env:PATH, $env:BASH_TOOLS_HOME)
     - pyenv global $PYTHON_VERSION
     - python --version
     - pip install -r driver/requirements.txt
