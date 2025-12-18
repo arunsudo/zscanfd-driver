@@ -125,7 +125,7 @@ build-windows-dumptool:
   stage: build-dumptool-windows
   tags:
     - Windows10-docker
-  image: navinkumarj/rust-msvc-wsc-25:git_vcpkg
+  image: navinkumarj/pyenv-py3-9-to-py3-13:wsc-25_msvc_rust-git_vcpkg
   script:
     - $env:PATH="$env:PATH;$env:VCPKG_ROOT"
     - netsh winhttp reset proxy
