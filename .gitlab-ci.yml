@@ -245,6 +245,8 @@ archive-all-artifacts:
     expire_in: never
 
 publish_package:
+  tags:
+    - cloud
   stage: publish
   image: debian:bullseye-slim
   rules:
@@ -269,6 +271,8 @@ publish_package:
     - curl --header "JOB-TOKEN:$CI_JOB_TOKEN" --upload-file zscanfd-package.zip "$PACKAGE_REGISTRY_UPLOAD_PATH"
 
 create_release:
+  tags:
+    - cloud
   stage: release
   image: debian:bullseye-slim
   rules:
