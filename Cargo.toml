@@ -1,6 +1,6 @@
 [package]
 name = "zscanfd"
-version = "0.2.0"
+version = "0.3.0"
 authors = ["Eric Evenchick <eric@evenchick.com>", "Vijay Kumar <vijaykumar@zilogic.com>", "Navin Jared Czernev <navinkumar.j@zilogic.com>", "Godson Gnanaraj <godson@zilogic.com>", "Arunkumar <arunkumar.m@zilogic.com>"]
 license = "MIT"
 keywords = ["can", "usb"]
@@ -21,7 +21,7 @@ name = "can"
 path = "src/main.rs"
 
 [dependencies]
-zscanfd-driver = {path = "driver", version = "0.2.0"}
+zscanfd-driver = {path = "driver", version = "0.3.0"}
 ctrlc = "3.1.4"
 clap = { version = "2.33.3", features = ["yaml"]}
 toml = "0.5.6"
