@@ -20,6 +20,7 @@ extern "C" {
 		uint8_t loopback;
 		uint8_t rtr;
 		uint8_t err;
+		uint32_t timestamp_us;
 	};
 
 	typedef void(__cdecl* ZsCanFdRxCallback)(const struct CanFrame* f);

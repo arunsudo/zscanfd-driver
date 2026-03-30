@@ -26,6 +26,7 @@ pub struct CFrame {
     loopback: u8,
     rtr: u8,
     err: u8,
+    timestamp_us: u32,
 }
 
 impl CFrame {
@@ -42,6 +43,7 @@ impl CFrame {
             loopback: if f.loopback { 1 } else { 0 },
             rtr: if f.rtr { 1 } else { 0 },
             err: if f.err { 1 } else { 0 },
+            timestamp_us: f.hw_timestamp,
         }
     }
 }
