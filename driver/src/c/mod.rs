@@ -10,6 +10,17 @@
 
 use crate::{Frame, Interface};
 use std::ffi::{CStr, c_char};
+
+use crate::{libusb_helper};
+use libusb1_sys::libusb_context;
+use libusb1_sys::libusb_init;
+use libusb1_sys::constants::LIBUSB_SUCCESS;
+use std::mem;
+
+// zscanfd USB VID / PID
+const USB_VID: u16 = 0x1d50;
+const USB_PID: u16 = 0x606f;
+
 /// A CAN frame in a C representation
 #[repr(C)]
 pub struct CFrame {
@@ -318,4 +329,22 @@ pub unsafe extern "C" fn zs_canfd_set_fd(
         None => return -1,
     }
     0
+}
+
+/// Get available devices
+#[no_mangle]
+pub unsafe extern "C" fn zs_canfd_get_available_devices_count() -> i32 {
+    let mut context = mem::MaybeUninit::<*mut libusb_context>::uninit();
+
+    let ctx = match unsafe { libusb_init(context.as_mut_ptr()) } {
+        LIBUSB_SUCCESS => unsafe { context.assume_init() },
+        _ => return 0,
+    };
+
+    let count = libusb_helper::LibUsbHelperDevice::new(ctx, USB_VID, USB_PID, String::from("")).get_available_devices();
+
+    match count {
+        count if count > 0 => count,
+        _ => 0
+    }
 }

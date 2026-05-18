@@ -114,4 +114,43 @@ impl LibUsbHelperDevice {
         }
         ret_handle
     }
+
+    // Return the available device counts
+    pub fn get_available_devices(&mut self) -> i32 {
+        // Counter count the device
+        let mut device_count = 0;
+        let mut list_dev: *const *mut libusb1_sys::libusb_device = std::ptr::null();
+
+        // Get the available USB devices
+        let available_devices_count = unsafe { libusb1_sys::libusb_get_device_list(self.ctx, &mut list_dev)};
+        if available_devices_count < 0 {
+            return -1;
+        }
+
+        // Raw pointer obtained through libusb (FFI) convert to &mut [T]
+        let devs = unsafe { slice::from_raw_parts(list_dev, available_devices_count as usize) };
+
+        // Iterate each USB device from devs
+        for dev in devs {
+            let mut desc = mem::MaybeUninit::<libusb1_sys::libusb_device_descriptor>::uninit();
+            let descriptor: Option<libusb1_sys::libusb_device_descriptor> =
+            // Get device descriptor
+            match unsafe { libusb1_sys::libusb_get_device_descriptor(*dev, desc.as_mut_ptr()) } {
+                0 => {
+                    Some(unsafe { desc.assume_init() })
+                },
+                _  => None,
+            };
+
+            // Check if &descriptor have data if yes &descriptor assign  Some(descriptor) then block will run otherwise skip
+            if let Some(descriptor) = &descriptor {
+                // Compare VID and PID
+                if (descriptor.idVendor == self.vendor_id) && (descriptor.idProduct == self.product_id) {
+                    device_count += 1;
+                }
+            }
+        }
+        unsafe { libusb1_sys::libusb_free_device_list(list_dev, 1) };
+        device_count
+    }
 }

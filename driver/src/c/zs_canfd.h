@@ -48,6 +48,8 @@ extern "C" {
 	__declspec(dllimport) int32_t zs_canfd_get_channel_count(zs_canfdhnd hnd);
 
 	__declspec(dllimport) int32_t zs_canfd_set_fd(zs_canfdhnd hnd, uint8_t channel, uint8_t enabled);
+
+	__declspec(dllimport) int32_t zs_canfd_get_available_devices_count();
 #ifdef __cplusplus
 }
 #endif  // __cplusplus
