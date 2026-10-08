@@ -63,9 +63,9 @@ clippy:
   stage: clippy-check
   tags:
     - cloud
-  image: rust:slim-bullseye
+  image: rust:slim-trixie
   script:
-    - apt update && apt install -y libusb-1.0-0-dev pkg-config
+    - apt-get update && apt-get install -y libusb-1.0-0-dev pkg-config
     - rustup component add clippy
     - cargo clippy --all-targets --all-features -- -D warnings
 
@@ -113,7 +113,7 @@ package-libs:
   tags:
     - cloud
   stage: archive-libs-package
-  image: debian:bullseye-slim
+  image: debian:trixie-slim
   script:
     - echo "Packaging lib files (*.dll, *.dll.lib, etc...)"
   extends:
@@ -158,9 +158,10 @@ build-python-libs-linux:
         - "3.10"
         - "3.11"
         - "3.12"
-  image: navinkumarj/pyenv-py3-9-to-py3-13:rust_slim-bullseye
+  image: repo.zilogic.com:5050/engg/zs/zs-products/zs-cantact-pro/driver
   script:
-    - apt update && apt install -y libusb-1.0-0-dev pkg-config
+    - apt-get update
+    - apt-get install -y libusb-1.0-0-dev pkg-config
     - rustup install nightly
     - pyenv global $PYTHON_VERSION
     - python --version
@@ -205,7 +206,7 @@ package-python:
   tags:
     - cloud
   stage: archive-python-libs
-  image: debian:bullseye-slim
+  image: debian:trixie-slim
   script:
     - echo "Packaging wheel files"
   needs:
@@ -221,7 +222,7 @@ archive-all-artifacts:
   tags:
     - cloud
   stage: archive-package
-  image: debian:bullseye-slim
+  image: debian:trixie-slim
   script:
     - apt-get update
     - apt-get install -y zip
@@ -248,7 +249,7 @@ publish_package:
   tags:
     - cloud
   stage: publish
-  image: debian:bullseye-slim
+  image: debian:trixie-slim
   rules:
     - if: '$CI_COMMIT_TAG'
   needs:
@@ -259,7 +260,7 @@ publish_package:
     - PACKAGE_REGISTRY_UPLOAD_PATH="$CI_API_V4_URL/projects/$CI_PROJECT_ID/packages/generic/zs-can-fd/driver/$VERSION/zscanfd-package.zip"
     - apt-get update
     - apt-get install -y python3-pip curl
-    - pip3 install zdeb-utils
+    - pip3 install zdeb-utils --break-system-packages
     - zdeb-utils -a download -k "$ENGG_PKG_REGISTRY_KEY" -r engg/packages -p workdrive-sync -v __latest__ -f workdrive-sync.deb
     - apt-get install ./workdrive-sync.deb -y
     # Upload to Zoho Workdrive
@@ -274,7 +275,7 @@ create_release:
   tags:
     - cloud
   stage: release
-  image: debian:bullseye-slim
+  image: debian:trixie-slim
   rules:
     - if: '$CI_COMMIT_TAG'
   needs:

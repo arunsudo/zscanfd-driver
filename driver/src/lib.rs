@@ -18,7 +18,6 @@ use crossbeam_channel::RecvError;
 use serde::{Deserialize, Serialize};
 
 mod device;
-use device::gsusb::*;
 use device::*;
 
 pub mod c;
