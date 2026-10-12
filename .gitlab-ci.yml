@@ -154,7 +154,6 @@ build-python-libs-linux:
   parallel:
     matrix:
       - PYTHON_VERSION:
-        - "3.9"
         - "3.10"
         - "3.11"
         - "3.12"
@@ -180,7 +179,6 @@ build-python-libs-windows:
   parallel:
     matrix:
       - PYTHON_VERSION:
-        - "3.9"
         - "3.10"
         - "3.11"
         - "3.12"
