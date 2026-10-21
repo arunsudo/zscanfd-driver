@@ -10,6 +10,8 @@
 
 use crate::{Frame, Interface};
 use std::ffi::{CStr, c_char};
+use std::ffi::CString;
+use std::ptr::null_mut;
 
 use crate::{libusb_helper};
 use libusb1_sys::libusb_context;
@@ -38,10 +40,11 @@ pub struct CFrame {
     rtr: u8,
     err: u8,
     timestamp_us: u32,
+    dev_ser_num_ref: *mut c_char,
 }
 
 impl CFrame {
-    fn from_frame(f: Frame) -> CFrame {
+    fn from_frame(f: Frame, dev_ser_num: CString) -> CFrame {
         CFrame {
             channel: f.channel,
             id: f.can_id,
@@ -55,6 +58,7 @@ impl CFrame {
             rtr: if f.rtr { 1 } else { 0 },
             err: if f.err { 1 } else { 0 },
             timestamp_us: f.hw_timestamp,
+            dev_ser_num_ref : dev_ser_num.into_raw(),
         }
     }
 }
@@ -66,6 +70,7 @@ impl CFrame {
 pub struct CInterface {
     i: Option<Interface>,
     c_rx_cb: Option<extern "C" fn(*const CFrame)>,
+    dev_ser_num: String,
 }
 
 /// Create a new zs_canfd interface, returning a pointer to the interface.
@@ -78,6 +83,7 @@ pub extern "C" fn zs_canfd_init() -> *mut CInterface {
     Box::into_raw(Box::new(CInterface {
         i: None,
         c_rx_cb: None,
+        dev_ser_num: String::new(),
     }))
 }
 
@@ -118,23 +124,24 @@ pub unsafe extern "C" fn zs_canfd_open(ptr: *mut CInterface) -> i32 {
 /// interaction with the device by using the device
 /// serial number (changing settings, starting communication).
 #[no_mangle]
-pub unsafe extern "C" fn zs_canfd_open_with_device_serial_number(ptr: *mut CInterface, dev_serial_num: *const c_char) -> i32 {
+pub unsafe extern "C" fn zs_canfd_open_with_device_serial_number(ptr: *mut CInterface, dev_ser_num_ref: *const c_char) -> i32 {
     // Manually check for NULL case
-    if dev_serial_num.is_null() {
+    if dev_ser_num_ref.is_null() {
         return -1;
     }
 
-    let dev_serial_number = match CStr::from_ptr(dev_serial_num).to_str() {
+    let dev_ser_num = match CStr::from_ptr(dev_ser_num_ref).to_str() {
         Ok(s) => s.to_string(),
         Err(_) => return -1,
     };
 
-    let i = match Interface::new_with_device_serial_number(dev_serial_number) {
+    let i = match Interface::new_with_device_serial_number(dev_ser_num.clone()) {
         Ok(i) => i,
         Err(_) => return -1,
     };
     let ci = &mut *ptr;
     ci.i = Some(i);
+    ci.dev_ser_num =  dev_ser_num;
     0
 }
 
@@ -159,13 +166,14 @@ pub unsafe extern "C" fn zs_canfd_start(
     let ci = &mut *ptr;
 
     let cb = ci.c_rx_cb;
+    let c_string = CString::new(ci.dev_ser_num.clone()).expect("CString::new failed");
     match &mut ci.i {
         Some(i) => i
             .start(channel as usize, move |f: Frame| {
                 match cb {
                     None => {}
                     Some(cb) => {
-                        cb(&CFrame::from_frame(f));
+                        cb(&CFrame::from_frame(f, c_string.clone()));
                     }
                 };
             })
@@ -347,4 +355,36 @@ pub unsafe extern "C" fn zs_canfd_get_available_devices_count() -> i32 {
         count if count > 0 => count,
         _ => 0
     }
+}
+
+/// Get available devices serial numbers
+#[no_mangle]
+pub unsafe extern "C" fn zs_canfd_get_available_devices_serial_number() -> *const c_char {
+     let mut context = mem::MaybeUninit::<*mut libusb_context>::uninit();
+
+    let ctx = match unsafe { libusb_init(context.as_mut_ptr()) } {
+        LIBUSB_SUCCESS => unsafe { context.assume_init() },
+        _ => return null_mut(),
+    };
+
+    let serial_nums = libusb_helper::LibUsbHelperDevice::new(ctx, USB_VID, USB_PID, String::from("")).get_available_devices_serial_numbers();
+    let mut comb_str = String::new();
+    let spliter = "|";
+
+    // Instead of passing a list of serial numbers, pass the serial numbers as a pipe-delimited string.
+    // Example: 123|124|12X. If no serial numbers are provided, pass an empty string ("").
+    for s in serial_nums.iter() {
+        comb_str = comb_str.to_owned() + spliter + s;
+    }
+
+    let c_string = CString::new(comb_str).expect("CString::new failed");
+    c_string.into_raw()
+}
+
+/// To free the 'c_string' created from 'zs_canfd_get_available_devices_serial_number()'
+#[no_mangle]
+pub unsafe extern "C" fn free_string(ptr: *const c_char) -> i32 {
+    // Take the ownership back to rust and drop the owner
+    let _ = CString::from_raw(ptr as *mut _);
+    0
 }
