@@ -29,7 +29,7 @@ setup(
     description="Support for the zs-canfd Controller Area Network Devices",
     long_description=long_description,
     long_description_content_type="text/markdown",
-    url="ToDo: Add zscanfd repo",
+    url="https://github.com/zilogic-systems/zscanfd-driver",
     classifiers=[
         "License :: OSI Approved :: MIT License",
         "Development Status :: 3 - Alpha",
